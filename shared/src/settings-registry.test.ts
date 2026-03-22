@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { settingsRegistry } from "./settings-registry";
+import {
+  getDefaultModelForProvider,
+  settingsRegistry,
+} from "./settings-registry";
 
 describe("settingsRegistry helpers", () => {
   describe("string parsing (parseNonEmptyStringOrNull)", () => {
@@ -83,6 +86,19 @@ describe("settingsRegistry helpers", () => {
         '["dev","engineer"]',
       );
       expect(settingsRegistry.searchTerms.serialize(null)).toBeNull();
+    });
+
+    it("parses valid workplace type arrays", () => {
+      expect(
+        settingsRegistry.workplaceTypes.parse('["remote","onsite"]'),
+      ).toEqual(["remote", "onsite"]);
+    });
+
+    it("rejects invalid workplace type arrays", () => {
+      expect(
+        settingsRegistry.workplaceTypes.parse('["remote","satellite"]'),
+      ).toBeNull();
+      expect(settingsRegistry.workplaceTypes.parse("[]")).toBeNull();
     });
   });
 
@@ -190,6 +206,16 @@ describe("settingsRegistry helpers", () => {
       );
       expect(settingsRegistry.llmProvider.parse("OPENAI-COMPATIBLE")).toBe(
         "openai_compatible",
+      );
+    });
+
+    it("uses provider-specific default models", () => {
+      expect(getDefaultModelForProvider("openai")).toBe("gpt-5.4-mini");
+      expect(getDefaultModelForProvider("gemini")).toBe(
+        "google/gemini-3-flash-preview",
+      );
+      expect(getDefaultModelForProvider("openrouter")).toBe(
+        "google/gemini-3-flash-preview",
       );
     });
   });
