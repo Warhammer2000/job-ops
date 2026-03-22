@@ -297,6 +297,7 @@ function normalizeProvider(
   }
   if (normalized === "openai") return "openai";
   if (normalized === "gemini") return "gemini";
+  if (normalized === "anthropic") return "anthropic";
   if (normalized === "lmstudio") return "lmstudio";
   if (normalized === "ollama") return "ollama";
   if (normalized && normalized !== "openrouter") {

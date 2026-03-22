@@ -4,7 +4,8 @@ export type LlmProvider =
   | "ollama"
   | "openai"
   | "openai_compatible"
-  | "gemini";
+  | "gemini"
+  | "anthropic";
 
 export type ResponseMode = "json_schema" | "json_object" | "text" | "none";
 

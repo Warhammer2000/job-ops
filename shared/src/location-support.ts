@@ -14,7 +14,124 @@ const COUNTRY_LABELS: Record<string, string> = {
   "usa/ca": "USA/CA",
   turkey: "Turkey",
   czechia: "Czechia",
+  "european union": "European Union",
+  eea: "EEA (EU + EFTA)",
+  "eu + uk": "EU + United Kingdom",
 };
+
+/**
+ * Region groups that expand into multiple individual countries.
+ * Each member must be a key present in SUPPORTED_COUNTRY_INPUTS.
+ */
+export const REGION_GROUPS: Record<string, readonly string[]> = {
+  "european union": [
+    "austria",
+    "belgium",
+    "bulgaria",
+    "croatia",
+    "cyprus",
+    "czechia",
+    "denmark",
+    "estonia",
+    "finland",
+    "france",
+    "germany",
+    "greece",
+    "hungary",
+    "ireland",
+    "italy",
+    "latvia",
+    "lithuania",
+    "luxembourg",
+    "malta",
+    "netherlands",
+    "poland",
+    "portugal",
+    "romania",
+    "slovakia",
+    "slovenia",
+    "spain",
+    "sweden",
+  ],
+  eea: [
+    "austria",
+    "belgium",
+    "bulgaria",
+    "croatia",
+    "cyprus",
+    "czechia",
+    "denmark",
+    "estonia",
+    "finland",
+    "france",
+    "germany",
+    "greece",
+    "hungary",
+    "ireland",
+    "italy",
+    "latvia",
+    "lithuania",
+    "luxembourg",
+    "malta",
+    "netherlands",
+    "norway",
+    "poland",
+    "portugal",
+    "romania",
+    "slovakia",
+    "slovenia",
+    "spain",
+    "sweden",
+    "switzerland",
+  ],
+  "eu + uk": [
+    "austria",
+    "belgium",
+    "bulgaria",
+    "croatia",
+    "cyprus",
+    "czechia",
+    "denmark",
+    "estonia",
+    "finland",
+    "france",
+    "germany",
+    "greece",
+    "hungary",
+    "ireland",
+    "italy",
+    "latvia",
+    "lithuania",
+    "luxembourg",
+    "malta",
+    "netherlands",
+    "poland",
+    "portugal",
+    "romania",
+    "slovakia",
+    "slovenia",
+    "spain",
+    "sweden",
+    "united kingdom",
+  ],
+};
+
+/**
+ * If `country` is a region group key, returns the list of member countries.
+ * Otherwise returns a single-element array with the original country.
+ */
+export function expandRegionGroup(country: string): string[] {
+  const normalized = normalizeCountryKey(country);
+  const members = REGION_GROUPS[normalized];
+  return members ? [...members] : [normalized];
+}
+
+/**
+ * Returns true if the given country key is a region group (e.g. "european union").
+ */
+export function isRegionGroup(country: string): boolean {
+  return normalizeCountryKey(country) in REGION_GROUPS;
+}
 
 // Keep this list aligned with the JobSpy supported country inputs.
 export const SUPPORTED_COUNTRY_INPUTS = [
@@ -97,6 +214,9 @@ export const SUPPORTED_COUNTRY_INPUTS = [
   "vietnam",
   "usa/ca",
   "worldwide",
+  "european union",
+  "eea",
+  "eu + uk",
 ] as const;
 
 const UK_ONLY_SOURCES = new Set<JobSource>(["gradcracker", "ukvisajobs"]);
@@ -186,6 +306,11 @@ export function isSourceAllowedForCountry(
   source: JobSource,
   country: string | null | undefined,
 ): boolean {
+  const normalized = normalizeCountryKey(country);
+  const members = REGION_GROUPS[normalized];
+  if (members) {
+    return members.some((member) => isSourceAllowedForCountry(source, member));
+  }
   if (UK_ONLY_SOURCES.has(source)) return isUkCountry(country);
   if (source === "glassdoor") return isGlassdoorCountry(country);
   if (source === "adzuna") return getAdzunaCountryCode(country) !== null;

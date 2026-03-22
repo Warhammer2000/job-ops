@@ -26,6 +26,7 @@ export const LLM_PROVIDERS = [
   "openai",
   "openai_compatible",
   "gemini",
+  "anthropic",
 ] as const;
 
 export type LlmProviderId = (typeof LLM_PROVIDERS)[number];
@@ -37,6 +38,7 @@ export const LLM_PROVIDER_LABELS: Record<LlmProviderId, string> = {
   openai: "OpenAI",
   openai_compatible: "OpenAI-compatible",
   gemini: "Gemini",
+  anthropic: "Anthropic (Claude)",
 };
 
 const PROVIDERS_WITH_API_KEY = new Set<LlmProviderId>([
@@ -44,6 +46,7 @@ const PROVIDERS_WITH_API_KEY = new Set<LlmProviderId>([
   "openai",
   "openai_compatible",
   "gemini",
+  "anthropic",
 ]);
 
 const PROVIDERS_WITH_BASE_URL = new Set<LlmProviderId>([
@@ -61,6 +64,8 @@ const PROVIDER_HINTS: Record<LlmProviderId, string> = {
   openai_compatible:
     "Use a bearer token with any chat-completions-compatible endpoint.",
   gemini: "Gemini uses the native AI Studio API and requires a key.",
+  anthropic:
+    "Anthropic uses the native Messages API. Supports Claude models directly.",
 };
 
 const PROVIDER_KEY_HELPERS: Record<LlmProviderId, string> = {
@@ -70,6 +75,7 @@ const PROVIDER_KEY_HELPERS: Record<LlmProviderId, string> = {
   openai: "Create a key at platform.openai.com",
   openai_compatible: "Use the bearer token issued by your compatible provider",
   gemini: "Create a key at aistudio.google.com/api-keys",
+  anthropic: "Create a key at console.anthropic.com/settings/keys",
 };
 
 const BASE_URL_PROVIDERS = ["lmstudio", "ollama", "openai_compatible"] as const;
@@ -87,6 +93,7 @@ export function normalizeLlmProvider(
   const normalized = value?.trim().toLowerCase();
   if (!normalized) return "openrouter";
   if (normalized === "openai-compatible") return "openai_compatible";
+  if (normalized === "anthropic" || normalized === "claude") return "anthropic";
   return (LLM_PROVIDERS as readonly string[]).includes(normalized)
     ? (normalized as LlmProviderId)
     : "openrouter";

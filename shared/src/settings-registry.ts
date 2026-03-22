@@ -106,6 +106,7 @@ export const settingsRegistry = {
           "openai",
           "openai_compatible",
           "gemini",
+          "anthropic",
         ])
         .nullable(),
     ),

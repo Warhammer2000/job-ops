@@ -23,15 +23,20 @@ export const manifest: ExtractorManifest = {
 
     const sites = context.selectedSources.filter(isJobSpySite);
 
+    // When running inside a region-group expansion (e.g. "European Union"),
+    // discover-jobs already iterates individual countries and passes each one
+    // as selectedCountry.  We must use that — not the raw DB setting which
+    // still contains the group label (e.g. "european union").
+    const location = context.selectedCountry;
+
     const result = await runJobSpy({
       sites,
       searchTerms: context.searchTerms,
-      location:
-        context.settings.searchCities ?? context.settings.jobspyLocation,
+      location,
       resultsWanted: context.settings.jobspyResultsWanted
         ? parseInt(context.settings.jobspyResultsWanted, 10)
         : undefined,
-      countryIndeed: context.settings.jobspyCountryIndeed,
+      countryIndeed: context.selectedCountry,
       onProgress: (event) => {
         if (context.shouldCancel?.()) return;
 

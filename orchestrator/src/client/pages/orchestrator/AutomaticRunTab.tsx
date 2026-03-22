@@ -1,12 +1,14 @@
 import { EXTRACTOR_SOURCE_METADATA } from "@shared/extractors";
 import {
+  expandRegionGroup,
   formatCountryLabel,
+  isRegionGroup,
   isSourceAllowedForCountry,
   normalizeCountryKey,
   SUPPORTED_COUNTRY_KEYS,
 } from "@shared/location-support.js";
 import type { AppSettings, JobSource } from "@shared/types";
-import { Loader2, Sparkles } from "lucide-react";
+import { AlertTriangle, Globe, Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
@@ -554,6 +556,15 @@ export const AutomaticRunTab: React.FC<AutomaticRunTabProps> = ({
         </Card>
       </div>
 
+      <RunSummary
+        country={values.country}
+        searchTerms={searchTerms}
+        sources={compatiblePipelineSources}
+        settings={settings}
+        estimate={estimate}
+        topN={values.topN}
+      />
+
       <div className="mt-3 flex shrink-0 items-center justify-between border-t border-border/60 bg-background pt-3">
         <div className="hidden text-sm text-muted-foreground md:block">
           Est: {estimate.discovered.min}-{estimate.discovered.max} jobs, ~
@@ -578,3 +589,114 @@ export const AutomaticRunTab: React.FC<AutomaticRunTabProps> = ({
     </div>
   );
 };
+
+function RunSummary({
+  country,
+  searchTerms,
+  sources,
+  settings,
+  estimate,
+  topN,
+}: {
+  country: string;
+  searchTerms: string[];
+  sources: JobSource[];
+  settings: AppSettings | null;
+  estimate: { discovered: { min: number; max: number } };
+  topN: number;
+}) {
+  const regionExpanded = isRegionGroup(country);
+  const countries = regionExpanded ? expandRegionGroup(country) : [country];
+  const llmProvider = settings?.llmProvider?.value;
+  const llmKeySet = Boolean(settings?.llmApiKeyHint);
+  const hasLlm = Boolean(llmProvider && llmKeySet);
+
+  const warnings: string[] = [];
+  if (!hasLlm) {
+    warnings.push(
+      "AI scoring not configured — go to Settings → Model to set up your LLM provider and API key.",
+    );
+  }
+  if (searchTerms.length === 0) {
+    warnings.push("No search terms — add at least one job title to search for.");
+  }
+  if (sources.length === 0) {
+    warnings.push("No compatible sources for this country selection.");
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <Globe className="h-4 w-4" />
+          Run Summary
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2 text-sm">
+        <div className="grid gap-x-4 gap-y-1 sm:grid-cols-[140px_1fr]">
+          <span className="text-muted-foreground">Region</span>
+          <span>
+            {formatCountryLabel(country)}
+            {regionExpanded && (
+              <span className="text-muted-foreground">
+                {" "}
+                ({countries.length} countries)
+              </span>
+            )}
+          </span>
+
+          <span className="text-muted-foreground">Search terms</span>
+          <span>
+            {searchTerms.length > 0
+              ? searchTerms.join(", ")
+              : "—"}
+          </span>
+
+          <span className="text-muted-foreground">Sources</span>
+          <span>{sources.length > 0 ? sources.map(s => sourceLabel[s] ?? s).join(", ") : "—"}</span>
+
+          <span className="text-muted-foreground">AI scoring</span>
+          <span>
+            {hasLlm ? (
+              <span className="text-green-500">
+                {llmProvider} — configured
+              </span>
+            ) : (
+              <span className="text-destructive">Not configured</span>
+            )}
+          </span>
+
+          <span className="text-muted-foreground">Estimated jobs</span>
+          <span>
+            {estimate.discovered.min}–{estimate.discovered.max} discovered, ~{topN} resumes tailored
+          </span>
+        </div>
+
+        {regionExpanded && (
+          <details className="pt-1">
+            <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">
+              Show {countries.length} countries
+            </summary>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {countries.map((c) => formatCountryLabel(c)).join(", ")}
+            </p>
+          </details>
+        )}
+
+        {warnings.length > 0 && (
+          <div className="space-y-1 pt-1">
+            {warnings.map((warning) => (
+              <div
+                key={warning}
+                className="flex items-start gap-2 rounded bg-destructive/10 px-2 py-1.5 text-xs text-destructive"
+              >
+                <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                <span>{warning}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
